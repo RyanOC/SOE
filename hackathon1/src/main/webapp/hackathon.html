@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Hackathon</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/themes/base/jquery-ui.css"/>
+    <script type="text/javascript" src="/hackathon1/js/hackathonUtils.js"></script>
+	<script type="text/javascript" src="/hackathon1/js/hackathon.js"></script>
+	<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+	<link rel="stylesheet" type="text/css" href="/hackathon1/css/site.css"/>
+	<style type="text/css">
+      #map_canvas {
+        width: 800px;
+        height: 600px;
+      }
+    </style>
+	<script language="javascript">
+		jQuery.noConflict();
+		jQuery.ajaxSetup({cache:false});
+		var userRoles = {view:true,contrib:true};
+    	var restUrl = "/hackathon1/rest/";
+    	jQuery(document).ready(function() {
+    		jQuery("#form-area").dialog({ autoOpen: false, modal:true, minWidth:600, width:700 });
+			// Way to do dependency check all in one
+			hackUtilsObj.init("menu-area","content-area","error-area","success-area",restUrl);
+			if (hackathonObj != null){
+				hackathonObj.init();
+			}
+		});
+    </script>
+</head>
+<body>
+	<div id="menu-area"></div>
+	<div id="success-area"></div>
+    <div id="error-area"></div>
+	<div id="content-area"></div>
+    <div id="task-panel"></div>
+    <div id="form-area" title="Hackathon"></div>
+</body>
+</html>
