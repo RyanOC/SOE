@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <title>Google Maps JavaScript API v3 Example: Multi-Polygon JSON</title>
+    <link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script type="text/javascript">
+
+        var Colors = {
+            strokeColor: "#0000FF",
+            strokeOpacity: 0.3,
+            strokeWeight: 4,
+            fillColor: "#00FFFF",
+            fillOpacity: 0.2
+        }
+
+        var currentlat = 0;
+        var currentlon = 0;
+
+        if (typeof String.prototype.trim !== 'function') {
+            String.prototype.trim = function () {
+                return this.replace(/^\s+|\s+$/g, '');
+            }
+        }
+
+        var map = null;
+        var bounds = null;
+        var infowindow = new google.maps.InfoWindow();
+
+
+        function LoadCurrentLocation() {
+
+            navigator.geolocation.getCurrentPosition(GetLocation);
+
+            function GetLocation(location) {
+                currentlat = location.coords.latitude;
+                currentlon = location.coords.longitude;
+                var myLatLng = new google.maps.LatLng(currentlat, currentlon);
+
+                
+                //var marker = new google.maps.Marker({ position: myLatLng, map: map });
+                //marker.setMap(map);
+
+                var image = 'http://www.allpaybroadband.com/images/layout/home.png';
+                var marker = new google.maps.Marker({ 
+                	position: myLatLng, 
+                	map: map,
+                	icon: image
+                	});
+                
+                marker.setMap(map);
+
+
+                
+                popup(marker, 'Current Location: ' + currentlat + ' , ' + currentlon);
+            }
+        }
+
+        function MultiPolygon2Polygon(kmlId) {
+
+            var multipolygon = null;
+
+            $.ajax({
+                dataType: 'json',
+                async: false,
+                error: function (jqXHR, textStatus, errorThrown) {
+                    alert('A communication error occurred');
+                },
+                success: function (data) {
+                    multipolygon = data;
+                },
+                url: '/hackathon1/rest/hunter/kml/' + kmlId  // 'handlers/kml.ashx?q=getkml' + kmlId
+            });
+
+			//alert(multipolygon);
+			
+			//alert(multipolygon.length)
+			
+			
+			
+			
+			
+			
+			for (var i = 0; i < multipolygon.length; i++) {
+				console.log(multipolygon[i]);
+			}
+
+
+
+
+			for (var i = 0; i < multipolygon.length; i++) {
+
+	            if (multipolygon[i]['cords'].length < 2) {
+	                var cords = multipolygon[i]['cords'];
+	
+	                var splitLL = cords[0].split(",");
+	
+	                if (splitLL[0].trim() != "") {
+	                    var lat = parseFloat(splitLL[1]);
+	                    var long = parseFloat(splitLL[0]);
+	
+	                    //var myLatLng = new google.maps.LatLng(35.200745, -111.643066); //flagstaff
+	                    var myLatLng = new google.maps.LatLng(lat, long);
+	                    var marker = new google.maps.Marker({ position: myLatLng, map: map });
+	                    marker.setMap(map);
+	                    var content = multipolygon[i]['name'];
+	                    popup(marker, content);
+	                }
+	            }
+	            else {
+	                for (var i = 0; i < multipolygon.length; i++) {
+	
+	                    var path = [];
+	                    var cords = multipolygon[i]['cords'];
+	
+	                    for (var j = 0; j < cords.length; j++) {
+	
+	                        var splitLL = cords[j].split(",");
+	
+	                        if (splitLL[0].trim() != "") {
+	
+	                            var lat = parseFloat(splitLL[1]);
+	                            var long = parseFloat(splitLL[0]);
+	
+	                            var point = new google.maps.LatLng(lat, long);
+	                            path.push(point);
+	                            bounds.extend(point);
+	                        }
+	                    }
+	
+	                    var polygon = new google.maps.Polygon({
+	                        paths: path,
+	                        strokeColor: Colors.strokeColor,
+	                        strokeOpacity: Colors.strokeOpacity,
+	                        strokeWeight: Colors.strokeWeight,
+	                        fillColor: Colors.fillColor,
+	                        fillOpacity: Colors.fillOpacity,
+	                        map: map
+	                    });
+	
+	                    var content = multipolygon[i]['name'];
+	                    popup(polygon, content);
+	                }
+	            }
+			}
+
+
+
+
+
+
+
+
+
+
+
+            
+        }
+
+        function initialize() {
+
+            var currCenter = null;
+            var currZoom = null;
+
+            if (map != null) {
+                currCenter = map.getCenter();
+                currZoom = map.getZoom();
+            }
+
+            //$("#map_canvas").html("");
+
+            //var mapdiv = $("#content > #map_canvas")[0];
+            var mapdiv = $("#map_canvas")[0];
+            var jstr = JSON.stringify(center);
+
+            map = null;
+            var center = new google.maps.LatLng(27.945469, -82.535316);
+            map = new google.maps.Map(mapdiv, {
+                zoom: 8,
+                center: center,
+                disableDefaultUI: true, // a way to quickly hide all controls
+                mapTypeControl: true,
+                scaleControl: true,
+                zoomControl: false,
+                zoomControlOptions: {
+                    style: google.maps.ZoomControlStyle.LARGE
+                },
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            });
+
+            bounds = new google.maps.LatLngBounds();
+            map.fitBounds(bounds);
+
+
+            Colors.strokeColor = "#000000";
+            Colors.strokeOpacity = 0.8;
+            Colors.strokeWeight = 1;
+            Colors.fillColor = "#00FFFF";
+            Colors.fillOpacity = 0.3;
+
+            MultiPolygon2Polygon('hillscounty');
+            if ($("#hillscounty").is(":checked")) {
+            	//MultiPolygon2Polygon('hillscounty');
+            }
+
+            if ($("#chkcities").is(":checked")) {
+            	MultiPolygon2Polygon('cities');
+            }
+
+            if ($("#chkschools").is(":checked")) {
+            	MultiPolygon2Polygon('schools');
+            }
+
+            if ($("#chkhospitals").is(":checked")) {
+            	MultiPolygon2Polygon('hospitals');
+            }
+
+            if ($("#chkdistricts").is(":checked")) {
+            	MultiPolygon2Polygon('commissionerdistricts');
+            }
+
+            if ($("#chkzombies").is(":checked")) {
+            	MultiPolygon2Polygon('zombies');
+            }
+            
+            //MultiPolygon2Polygon('hillscounty');
+            //MultiPolygon2Polygon('firestations');
+            //MultiPolygon2Polygon('floodzones');
+            
+			//schools
+            //firestations
+            //hospitals
+            //libraries
+            //schoolbusstops
+            //cities
+            //commissionerdistricts
+            //emergencyshelters
+            //floodzones
+            //parks
+            //hillscounty
+            //zombies
+
+            
+            
+
+            //MultiPolygon2Polygon('home');
+
+            /*
+            Colors.strokeColor = "#0000FF";
+            Colors.strokeOpacity = 0.8;
+            Colors.strokeWeight = 1;
+            Colors.fillColor = "#00FFFF";
+            Colors.fillOpacity = 0.1;
+            MultiPolygon2Polygon(998);
+            */
+            /*
+            Colors.strokeColor = "#0000FF";
+            Colors.strokeOpacity = 0.8;
+            Colors.strokeWeight = 1;
+            Colors.fillColor = "#00FFFF";
+            Colors.fillOpacity = 0.1;
+            MultiPolygon2Polygon(997);
+            */
+
+            LoadCurrentLocation();
+
+            google.maps.event.trigger(map, 'resize');
+            map.setCenter(currCenter);
+            map.setZoom(currZoom)
+        }
+
+        function HidePanel() {
+            if ($('#panel').hasClass('show-panel')) {
+                $('#panel').removeClass('show-panel').addClass('hide-panel');
+                $('#show-button').css({ display: "block" });
+            }
+        }
+
+        $(document).ready(function () {
+
+            initialize();
+
+            $('#apply-button').click(function () {
+                HidePanel();
+                initialize();
+            });
+            
+            $('#show-button').click(function () {
+                if ($('#show-button').css('display') == 'block') {
+                    $('#panel').removeClass('hide-panel').addClass('show-panel');
+                    $('#show-button').css({ display: "none" });
+                }
+            });
+
+            $('#cancel-button').click(function () {
+                HidePanel();
+            });
+        });
+
+        function popup(polygon, Message) {
+            google.maps.event.addListener(polygon, 'click', function (event) {
+                infowindow.setContent(Message);
+                if (event) point = event.latLng;
+                infowindow.setPosition(point);
+                infowindow.open(map);
+            });
+        }
+
+    </script>
+
+    <style type="text/css">
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #content {
+            width: 100%;
+            height: 100%;
+        }
+
+        #map_canvas {
+            height: 100%;
+        }
+
+
+        .panel {
+            padding-left:10px;
+            position: absolute;
+            width: 150px;
+            z-index: 999;
+            height: 100%;
+            background: #ebebeb;
+            border-right: solid 2px #808080;
+        }
+
+        .show-panel {
+            left: 0px;
+        }
+
+        .hide-panel {
+            left: -162px;
+        }
+
+        #hide-button {
+            position: absolute;
+            background: white;
+            border: 1px solid black;
+            cursor: pointer;
+            top:4px;
+            padding:0px 2px;
+        }
+
+        
+
+        #cancel-button {
+            position: absolute;
+            background: white;
+            border: 1px solid black;
+            cursor: pointer;
+            top:200px;
+            left:20px;
+            padding:0px 2px;
+        }
+
+        #apply-button {
+            position: absolute;
+            background: white;
+            border: 1px solid black;
+            cursor: pointer;
+            top:200px;
+            left:80px;
+            padding:0px 2px;
+        }
+
+
+        .show-panel #hide-button {
+            right: 0px;
+        }
+
+        .hide-panel #hide-button {
+            left: 100px;
+        }
+
+        #map-holder {
+            position: absolute;
+            height: 300px;
+        }
+
+        .show-panel + #map-holder {
+            width: 90%;
+            left: 10%;
+        }
+
+        .hide-panel + #map-holder {
+            position:absolute;
+            width: 100%;
+            left: 200px;
+            top:50px;
+        }
+
+
+
+        #show-button {
+            position:absolute;
+            z-index:999;
+            left:10px;
+            top:4px;
+            background: white;
+            border: 1px solid black;
+            cursor: pointer;
+            display:none;
+            padding:0px 2px;
+        }
+
+
+    </style>
+</head>
+<body onload="">
+    <div id="content">
+        <div id="panel" class="panel show-panel">
+            <!--div id="hide-button">Hide</div-->
+            <br />
+            <strong>Select Features:</strong><br />
+            <label><input id="chkcities" type="checkbox" name="layer" value="cities"/> Cities</label><br />
+            <label><input id="chkschools" type="checkbox" name="layer" value="Schools"/> Schools</label><br />
+            <label><input id="chkhospitals" type="checkbox" name="layer" value="Hospitals"/> Hospitals</label><br />
+            <label><input id="chkdistricts" type="checkbox" name="layer" value="Districts"/> Districts</label><br />
+			<label><input id="chkzombies" type="checkbox" name="layer" value="Zombies"/> Zombies</label><br />
+            <div id="apply-button">Apply</div>
+            <div id="cancel-button">Cancel</div>
+        </div>
+        <div id="show-button">Show Options</div>
+        <div id="map_canvas"></div>
+    </div>
+</body>
+</html>
